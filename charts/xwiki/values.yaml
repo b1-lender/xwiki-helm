@@ -46,6 +46,9 @@ extraEnvVars: []
 #  - name: FOO
 #    value: "bar"
 
+# Optionally specify an extra list of additional enviroment variables in the secrets.yaml
+extraSecrets: []
+
 # Optionally specify an extra list of additional volumes.
 extraVolumes: []
 
@@ -194,7 +197,15 @@ postgresql:
 ## Set the image tag if want to use externalDB
 ##
 externalDB:
-  password: ''
+  password:
+    # -- Database password as plain value (fallback if no secret exists inside of Kubernetes).
+    value: ""
+    # Database password from existing secret (higher precedence than plain value)
+    secret:
+      # -- Name of the Kubernetes secret that contains the password for the database.
+      name: ""
+      # -- Key inside the Kubernetes secret that contains the password for the database.
+      key: ""
   user: ''
   database: ''
   host: ''
@@ -349,6 +360,52 @@ customConfigs:
     #
   # xwiki.properties:
     #
+
+# Secrets for custom configuration files for xwiki
+customConfigsSecrets:
+  # Properties key that exists, replace in line is done with value here defined.
+  # If key don't exists, this key and value will be appended in that specific file.
+  # This files are list of key: value that are translated as key=value in that file.
+  # Properties with an empty value will be omitted.
+  xwiki.cfg:
+    xwiki.superadminpassword:
+      # -- Superadmin password as plain value (fallback if no secret exists inside of Kubernetes).
+      value: ""
+      # Superadmin password from existing secret (higher precedence than plain value)
+      secret:
+        # -- Name of the Kubernetes secret that contains the superadmin password
+        name: ""
+        # -- Key inside the Kubernetes secret that contains the superadmin password
+        key: ""
+    xwiki.authentication.ldap.bind_pass:
+      # -- LDAP password as plain value (fallback if no secret exists inside of Kubernetes).
+      value: ""
+      # LDAP password from existing secret (higher precedence than plain value)
+      secret:
+        # -- Name of the Kubernetes secret that contains the LDAP password
+        name: ""
+        # -- Key inside the Kubernetes secret that contains the LDAP password
+        key: ""
+
+  xwiki.properties:
+    oidc.secret:
+      # -- OIDC secret as plain value (fallback if no secret exists inside of Kubernetes).
+      value: ""
+      # OIDC secret from existing secret (higher precedence than plain value)
+      secret:
+        # -- Name of the Kubernetes secret that contains the OIDC secret
+        name: ""
+        # -- Key inside the Kubernetes secret that contains the OIDC secret
+        key: ""
+    workplaceServices.portalSecret:
+      # -- WorkplaceService PortalSecret as plain value (fallback if no secret exists inside of Kubernetes).
+      value: ""
+      # WorkplaceService PortalSecret from existing secret (higher precedence than plain value)
+      secret:
+        # -- Name of the Kubernetes secret that contains the WorkplaceService PortalSecret
+        name: ""
+        # -- Key inside the Kubernetes secret that contains the WorkplaceService PortalSecret
+        key: ""
 
 # Properties to be passed to Java process with -D parameters using JAVA_OPTS
 properties:

@@ -80,6 +80,15 @@ data:
       {{- end }}
     {{- end }}
 
+    # Replace all non empty values from keys defineded on customConfigsSecrets
+    {{- range $file, $values := .Values.customConfigsSecrets }}
+      {{- range $key, $value := $values }}
+        {{ if  index $value "value" }}
+          xwiki_replace_or_add "/usr/local/xwiki/data/{{ $file }}" '{{ $key }}' '{{ index $value "value" }}'
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
     {{- if .Values.customJavaAgent }}
       export JAVA_OPTS=" -javaagent:{{ .Values.customJavaAgent }} ${JAVA_OPTS}"
     {{- else if .Values.glowroot.enabled }}
