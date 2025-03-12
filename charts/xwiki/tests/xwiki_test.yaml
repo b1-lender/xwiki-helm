@@ -3,6 +3,7 @@ templates:
   - xwiki.yaml
   - configmaps.yaml
   - initialization-configmaps.yaml
+  - initialization-secrets.yaml
 tests:
   - it: testing default values
     documentIndex: 0
@@ -15,6 +16,9 @@ tests:
         template: xwiki.yaml
       - isNotEmpty:
           path: spec.template.metadata.annotations["checksum/initialization-configmaps"]
+        template: xwiki.yaml
+      - isNotEmpty:
+          path: spec.template.metadata.annotations["checksum/initialization-secrets"]
         template: xwiki.yaml
   - it: should use custom image
     set:

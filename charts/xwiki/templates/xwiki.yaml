@@ -28,6 +28,7 @@ spec:
         # Annotations to rollout changes on configs on workload
         checksum/configmap: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
         checksum/initialization-configmaps: {{ include (print $.Template.BasePath "/initialization-configmaps.yaml") . | sha256sum }}
+        checksum/initialization-secrets: {{ include (print $.Template.BasePath "/initialization-secrets.yaml") . | sha256sum }}
       labels:
         {{- include "xwiki.labels" . | nindent 8 }}
     spec:
@@ -40,7 +41,7 @@ spec:
         - name: {{ .Chart.Name }}
           image: {{ include "xwiki.imageName" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["/bin/bash", "/configmaps/entrypoint"]
+          command: ["/bin/bash", "/secrets/entrypoint"]
           {{- if .Values.containerSecurityContext.enabled }}
           securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
           {{- end }}
@@ -56,6 +57,34 @@ spec:
           {{- if .Values.javaOpts }}
             - name: JAVA_OPTS
               value: {{ .Values.javaOpts | join " " | quote }}
+          {{- end }}
+          {{- range $key, $value := .Values.javaOptsSecrets }}
+            {{- $keySanitised := regexReplaceAll "\\W+" $key "_" }}
+            - name: {{ $keySanitised | upper }}
+              valueFrom:
+                secretKeyRef:
+                  {{- if index $value "secret" }}
+                  key: {{ $value.secret.key | default $keySanitised |quote }}
+                  name: {{ $value.secret.name | default $fullName | quote }}
+                  {{- else }}
+                  key: {{ $keySanitised | quote }}
+                  name: {{ $fullName | quote }}
+                  {{- end }}
+          {{- end }}
+          {{- range $file, $values := .Values.customConfigsSecrets }}
+            {{- range $key, $value := $values }}
+              {{- $keySanitised := regexReplaceAll "\\W+" $key "_" }}
+            - name: {{ $keySanitised | upper }}
+              valueFrom:
+                secretKeyRef:
+                  {{- if index $value "secret" }}
+                  key: {{ $value.secret.key | default $keySanitised |quote }}
+                  name: {{ $value.secret.name | default $fullName | quote }}
+                  {{- else }}
+                  key: {{ $keySanitised | quote }}
+                  name: {{ $fullName | quote }}
+                  {{- end }}
+            {{- end }}
           {{- end }}
           {{- range .Values.extraEnvVars }}
             - name: {{ .name  }}
@@ -124,6 +153,8 @@ spec:
               mountPath: /usr/local/xwiki/data
             - name: configmaps
               mountPath: /configmaps
+            - name: secrets
+              mountPath: /secrets
             {{- if .Values.extraVolumeMounts }}
             {{- .Values.extraVolumeMounts | toYaml | nindent 12 }}
             {{- end }}
@@ -159,6 +190,9 @@ spec:
         - name: configmaps
           configMap:
             name: {{ include "xwiki.initScripts" . }}
+        - name: secrets
+          secret:
+            secretName: {{ include "xwiki.initScripts" . }}
         - name: xwiki-data
   {{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
           persistentVolumeClaim:
